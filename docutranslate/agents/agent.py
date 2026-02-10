@@ -59,6 +59,8 @@ class AgentConfig:
     rpm: int | None = None  # 每分钟请求数限制
     tpm: int | None = None  # 每分钟Token数限制
     provider: ProviderType | None = None
+    source_lang: str | None = None  # 源语言，用于qwen-mt等翻译模型
+    to_lang: str | None = None  # 目标语言，用于qwen-mt等翻译模型
 
 
 class TotalErrorCounter:
@@ -316,6 +318,10 @@ class Agent:
         self.rate_limiter = RateLimiter(rpm=config.rpm, tpm=config.tpm)
 
         self.provider = config.provider if config.provider is not None else get_provider_by_domain(self.domain)
+        
+        # 初始化翻译相关配置（用于qwen-mt等翻译模型）
+        self.source_lang = config.source_lang
+        self.to_lang = config.to_lang
 
     def _is_qwen_mt_model(self) -> bool:
         """
@@ -371,10 +377,12 @@ class Agent:
             "Authorization": f"Bearer {self.key}",
         }
         
-        # qwen-mt series models do not support system prompts, so merge it into the user message
+        # qwen-mt series models are specialized translation models
+        # They translate all user prompts, so we skip system prompts entirely
+        # and use translation_options parameter instead
         if self._is_qwen_mt_model():
             messages = [
-                {"role": "user", "content": f"{system_prompt}\n\n{prompt}"},
+                {"role": "user", "content": prompt},
             ]
         else:
             messages = [
@@ -388,6 +396,22 @@ class Agent:
             "temperature": temperature,
             "top_p": top_p,
         }
+        
+        # Add translation_options for qwen-mt models
+        if self._is_qwen_mt_model():
+            translation_options = {}
+            if self.source_lang:
+                translation_options["source_lang"] = self.source_lang
+            if self.to_lang:
+                translation_options["target_lang"] = self.to_lang
+            # Add domain hints from system_prompt if available
+            # Domain hints only support English
+            if system_prompt and system_prompt.strip():
+                translation_options["domain"] = system_prompt
+            
+            if translation_options:
+                data["translation_options"] = translation_options
+        
         if self.thinking != "default":
             self._add_thinking_mode(data)
         if json_format:

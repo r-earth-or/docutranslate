@@ -126,7 +126,7 @@ class DocxTranslator(AiTranslator):
         glossary_dict = self.glossary.glossary_dict if self.glossary else None
         if not self.skip_translate:
             agent_config = SegmentsTranslateAgentConfig(
-                custom_prompt=config.custom_prompt, to_lang=config.to_lang, base_url=config.base_url,
+                custom_prompt=config.custom_prompt, to_lang=config.to_lang, source_lang=config.source_lang, base_url=config.base_url,
                 api_key=config.api_key, model_id=config.model_id, temperature=config.temperature,
                 thinking=config.thinking, concurrent=config.concurrent, timeout=config.timeout,
                 logger=self.logger, glossary_dict=glossary_dict, retry=config.retry,
