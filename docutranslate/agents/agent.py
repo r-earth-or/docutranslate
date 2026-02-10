@@ -317,6 +317,13 @@ class Agent:
 
         self.provider = config.provider if config.provider is not None else get_provider_by_domain(self.domain)
 
+    def _is_qwen_mt_model(self) -> bool:
+        """
+        检测是否为 qwen-mt 系列模型。
+        qwen-mt 模型不支持 system prompt，需要将 system prompt 合并到 user message 中。
+        """
+        return "mt" in self.model_id.lower()
+
     def _estimate_tokens(self, text: str) -> int:
         """
         改进的纯 Python 估算，适配更多语言。
@@ -361,12 +368,21 @@ class Agent:
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.key}",
         }
-        data = {
-            "model": self.model_id,
-            "messages": [
+        
+        # qwen-mt 系列模型不支持 system prompt，需要将其合并到 user message 中
+        if self._is_qwen_mt_model():
+            messages = [
+                {"role": "user", "content": f"{system_prompt}\n\n{prompt}"},
+            ]
+        else:
+            messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt},
-            ],
+            ]
+        
+        data = {
+            "model": self.model_id,
+            "messages": messages,
             "temperature": temperature,
             "top_p": top_p,
         }
