@@ -60,7 +60,7 @@ def create_workflow_from_payload(payload: TranslatePayload, logger: logging.Logg
     # 1. Markdown Based Workflow
     if isinstance(payload, MarkdownWorkflowParams):
         translator_args = payload.model_dump(
-            include={"skip_translate", "base_url", "api_key", "model_id", "to_lang", "custom_prompt",
+            include={"skip_translate", "base_url", "api_key", "model_id", "to_lang", "source_lang", "custom_prompt",
                      "temperature", "thinking", "chunk_size", "concurrent", "glossary_dict", "timeout",
                      "retry", "system_proxy_enable", "force_json", "rpm", "tpm", "provider"},
             exclude_none=True,

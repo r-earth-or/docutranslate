@@ -18,11 +18,13 @@ import httpx
 
 from docutranslate.agents.provider import get_provider_by_domain
 from docutranslate.agents.thinking.thinking_factory import get_thinking_mode, ProviderType
+from docutranslate.agents.language_mapper import normalize_language_code
 from docutranslate.logger import global_logger
 from docutranslate.utils.utils import get_httpx_proxies
 
 MAX_REQUESTS_PER_ERROR = 15
 MAX_CONTINUE_FETCHES = 2  # 响应被截断时，最多继续获取的次数
+DEFAULT_SOURCE_LANG = "auto"  # qwen-mt模型默认源语言（自动检测）
 
 ThinkingMode = Literal["enable", "disable", "default"]
 
@@ -59,6 +61,8 @@ class AgentConfig:
     rpm: int | None = None  # 每分钟请求数限制
     tpm: int | None = None  # 每分钟Token数限制
     provider: ProviderType | None = None
+    source_lang: str | None = None  # 源语言，用于qwen-mt等翻译模型
+    to_lang: str | None = None  # 目标语言，用于qwen-mt等翻译模型
 
 
 class TotalErrorCounter:
@@ -316,6 +320,19 @@ class Agent:
         self.rate_limiter = RateLimiter(rpm=config.rpm, tpm=config.tpm)
 
         self.provider = config.provider if config.provider is not None else get_provider_by_domain(self.domain)
+        
+        # 初始化翻译相关配置（用于qwen-mt等翻译模型）
+        self.source_lang = config.source_lang
+        self.to_lang = config.to_lang
+
+    def _is_qwen_mt_model(self) -> bool:
+        """
+        Detects whether this is a qwen-mt series model.
+        qwen-mt models do not support system prompts and require merging 
+        the system prompt into the user message.
+        """
+        model_id_lower = self.model_id.lower()
+        return "qwen" in model_id_lower and "mt" in model_id_lower
 
     def _estimate_tokens(self, text: str) -> int:
         """
@@ -361,15 +378,52 @@ class Agent:
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.key}",
         }
-        data = {
-            "model": self.model_id,
-            "messages": [
+        
+        # qwen-mt series models are specialized translation models
+        # They translate all user prompts, so we skip system prompts entirely
+        # and use translation_options parameter instead
+        if self._is_qwen_mt_model():
+            messages = [
+                {"role": "user", "content": prompt},
+            ]
+            # Log that system_prompt is being used as domain hint instead of message role
+            if system_prompt and system_prompt.strip():
+                self.logger.debug(f"qwen-mt model: using system_prompt as domain hint in translation_options")
+        else:
+            messages = [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt},
-            ],
+            ]
+        
+        data = {
+            "model": self.model_id,
+            "messages": messages,
             "temperature": temperature,
             "top_p": top_p,
         }
+        
+        # Add translation_options for qwen-mt models
+        if self._is_qwen_mt_model():
+            translation_options = {}
+            
+            # source_lang默认为"auto"让模型自动识别源语言
+            source_lang_code = normalize_language_code(self.source_lang, for_qwen_mt=True) if self.source_lang else DEFAULT_SOURCE_LANG
+            translation_options["source_lang"] = source_lang_code
+            
+            # target_lang是必需的，转换为qwen-mt需要的语言代码
+            if self.to_lang:
+                target_lang_code = normalize_language_code(self.to_lang, for_qwen_mt=True)
+                translation_options["target_lang"] = target_lang_code
+            
+            # 将system_prompt作为domain提示传递给qwen-mt
+            # 注意：根据官方文档，domain提示仅支持英文
+            # 如果使用非英文的domain提示，可能无法获得最佳效果
+            if system_prompt and system_prompt.strip():
+                translation_options["domain"] = system_prompt
+            
+            if translation_options:
+                data["translation_options"] = translation_options
+        
         if self.thinking != "default":
             self._add_thinking_mode(data)
         if json_format:

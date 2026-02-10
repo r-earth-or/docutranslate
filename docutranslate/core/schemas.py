@@ -127,6 +127,11 @@ class BaseWorkflowParams(BaseModel):
     to_lang: str = Field(
         default="中文", description="目标翻译语言。", examples=["简体中文", "English"]
     )
+    source_lang: Optional[str] = Field(
+        default="auto",
+        description="源语言，用于qwen-mt等专门翻译模型。默认为'auto'自动检测。",
+        examples=["auto", "English", "中文"],
+    )
     chunk_size: int = Field(
         default=default_params["chunk_size"], description="文本分割的块大小（字符）。"
     )

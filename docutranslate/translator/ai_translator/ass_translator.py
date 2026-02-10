@@ -30,6 +30,7 @@ class AssTranslator(AiTranslator):
             agent_config = SegmentsTranslateAgentConfig(
                 custom_prompt=config.custom_prompt,
                 to_lang=config.to_lang,
+                source_lang=config.source_lang,
                 base_url=config.base_url,
                 api_key=config.api_key,
                 model_id=config.model_id,
