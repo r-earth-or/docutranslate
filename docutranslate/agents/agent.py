@@ -384,6 +384,9 @@ class Agent:
             messages = [
                 {"role": "user", "content": prompt},
             ]
+            # Log that system_prompt is being used as domain hint instead of message role
+            if system_prompt and system_prompt.strip():
+                self.logger.debug(f"qwen-mt model: using system_prompt as domain hint in translation_options")
         else:
             messages = [
                 {"role": "system", "content": system_prompt},
