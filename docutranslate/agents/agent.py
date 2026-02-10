@@ -24,6 +24,7 @@ from docutranslate.utils.utils import get_httpx_proxies
 
 MAX_REQUESTS_PER_ERROR = 15
 MAX_CONTINUE_FETCHES = 2  # 响应被截断时，最多继续获取的次数
+DEFAULT_SOURCE_LANG = "auto"  # qwen-mt模型默认源语言（自动检测）
 
 ThinkingMode = Literal["enable", "disable", "default"]
 
@@ -405,8 +406,8 @@ class Agent:
         if self._is_qwen_mt_model():
             translation_options = {}
             
-            # source_lang默认为"auto"让模型自动识别
-            source_lang_code = normalize_language_code(self.source_lang, for_qwen_mt=True) if self.source_lang else "auto"
+            # source_lang默认为"auto"让模型自动识别源语言
+            source_lang_code = normalize_language_code(self.source_lang, for_qwen_mt=True) if self.source_lang else DEFAULT_SOURCE_LANG
             translation_options["source_lang"] = source_lang_code
             
             # target_lang是必需的，转换为qwen-mt需要的语言代码
@@ -414,8 +415,9 @@ class Agent:
                 target_lang_code = normalize_language_code(self.to_lang, for_qwen_mt=True)
                 translation_options["target_lang"] = target_lang_code
             
-            # Add domain hints from system_prompt if available
-            # Domain hints only support English
+            # 将system_prompt作为domain提示传递给qwen-mt
+            # 注意：根据官方文档，domain提示仅支持英文
+            # 如果使用非英文的domain提示，可能无法获得最佳效果
             if system_prompt and system_prompt.strip():
                 translation_options["domain"] = system_prompt
             

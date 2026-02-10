@@ -178,11 +178,23 @@ def normalize_language_code(language: str, for_qwen_mt: bool = False) -> str:
     将语言名称或代码标准化为适当的格式
     
     Args:
-        language: 输入的语言名称或代码
+        language: 输入的语言名称或代码（如"中文"、"English"、"zh"等）
         for_qwen_mt: 是否为qwen-mt模型转换（需要特定的代码格式）
     
     Returns:
-        标准化后的语言代码
+        标准化后的语言代码。如果输入为空或None，返回空字符串。
+        对于qwen-mt模型，将语言名称转换为相应的语言代码（如"中文" -> "zh"）。
+        如果映射表中找不到对应的语言，则原样返回（可能已经是正确的代码）。
+    
+    Examples:
+        >>> normalize_language_code("中文", for_qwen_mt=True)
+        'zh'
+        >>> normalize_language_code("English", for_qwen_mt=True)
+        'en'
+        >>> normalize_language_code("", for_qwen_mt=True)
+        ''
+        >>> normalize_language_code(None, for_qwen_mt=True)
+        ''
     """
     if not language:
         return ""
