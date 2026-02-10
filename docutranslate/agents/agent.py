@@ -59,8 +59,8 @@ class AgentConfig:
     rpm: int | None = None  # 每分钟请求数限制
     tpm: int | None = None  # 每分钟Token数限制
     provider: ProviderType | None = None
-    source_lang: str | None = None  # 源语言，用于qwen-mt等翻译模型
-    to_lang: str | None = None  # 目标语言，用于qwen-mt等翻译模型
+    source_lang: str | None = None  # Source language for translation models like qwen-mt
+    to_lang: str | None = None  # Target language for translation models like qwen-mt
 
 
 class TotalErrorCounter:
@@ -319,7 +319,7 @@ class Agent:
 
         self.provider = config.provider if config.provider is not None else get_provider_by_domain(self.domain)
         
-        # 初始化翻译相关配置（用于qwen-mt等翻译模型）
+        # Initialize translation-related configuration (for translation models like qwen-mt)
         self.source_lang = config.source_lang
         self.to_lang = config.to_lang
 
