@@ -290,6 +290,223 @@ _COMPLEX_SCRIPT_PATTERN = re.compile(
     r'[\u2e80-\u9fff\u0400-\u04ff\u0600-\u06ff\u0e00-\u0e7f\u0900-\u097f]'
 )
 
+def _normalize_mt_lang_key(lang: str) -> str:
+    key = str(lang).strip().lower()
+    key = key.replace("_", "-")
+    key = key.replace("'", "'").replace("'", "'")
+    key = key.replace("–", "-").replace("—", "-")
+    key = re.sub(r"\s+", " ", key)
+    return key
+
+
+_MT_LANG_BY_CODE = {
+    "en": "English",
+    "zh": "Chinese",
+    "zh-tw": "Traditional Chinese",
+    "ru": "Russian",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "es": "Spanish",
+    "fr": "French",
+    "pt": "Portuguese",
+    "de": "German",
+    "it": "Italian",
+    "th": "Thai",
+    "vi": "Vietnamese",
+    "id": "Indonesian",
+    "ms": "Malay",
+    "ar": "Arabic",
+    "hi": "Hindi",
+    "he": "Hebrew",
+    "my": "Burmese",
+    "ta": "Tamil",
+    "ur": "Urdu",
+    "bn": "Bengali",
+    "pl": "Polish",
+    "nl": "Dutch",
+    "ro": "Romanian",
+    "tr": "Turkish",
+    "km": "Khmer",
+    "lo": "Lao",
+    "yue": "Cantonese",
+    "cs": "Czech",
+    "el": "Greek",
+    "sv": "Swedish",
+    "hu": "Hungarian",
+    "da": "Danish",
+    "fi": "Finnish",
+    "uk": "Ukrainian",
+    "bg": "Bulgarian",
+    "sr": "Serbian",
+    "te": "Telugu",
+    "af": "Afrikaans",
+    "hy": "Armenian",
+    "as": "Assamese",
+    "ast": "Asturian",
+    "eu": "Basque",
+    "be": "Belarusian",
+    "bs": "Bosnian",
+    "ca": "Catalan",
+    "ceb": "Cebuano",
+    "hr": "Croatian",
+    "arz": "Egyptian Arabic",
+    "et": "Estonian",
+    "gl": "Galician",
+    "ka": "Georgian",
+    "gu": "Gujarati",
+    "is": "Icelandic",
+    "jv": "Javanese",
+    "kn": "Kannada",
+    "kk": "Kazakh",
+    "lv": "Latvian",
+    "lt": "Lithuanian",
+    "lb": "Luxembourgish",
+    "mk": "Macedonian",
+    "mai": "Maithili",
+    "mt": "Maltese",
+    "mr": "Marathi",
+    "acm": "Mesopotamian Arabic",
+    "ary": "Moroccan Arabic",
+    "ars": "Najdi Arabic",
+    "ne": "Nepali",
+    "az": "North Azerbaijani",
+    "apc": "North Levantine Arabic",
+    "uz": "Northern Uzbek",
+    "nb": "Norwegian Bokmål",
+    "nn": "Norwegian Nynorsk",
+    "oc": "Occitan",
+    "or": "Odia",
+    "pag": "Pangasinan",
+    "scn": "Sicilian",
+    "sd": "Sindhi",
+    "si": "Sinhala",
+    "sk": "Slovak",
+    "sl": "Slovenian",
+    "ajp": "South Levantine Arabic",
+    "sw": "Swahili",
+    "tl": "Tagalog",
+    "acq": "Ta'izzi-Adeni Arabic",
+    "sq": "Tosk Albanian",
+    "aeb": "Tunisian Arabic",
+    "vec": "Venetian",
+    "war": "Waray",
+    "cy": "Welsh",
+    "fa": "Western Persian",
+}
+
+_MT_LANG_BY_NAME = {
+    _normalize_mt_lang_key(name): name for name in set(_MT_LANG_BY_CODE.values())
+}
+
+_MT_LANG_ALIASES = {
+    # Existing UI/common aliases
+    "english": "English",
+    "英语": "English",
+    "英文": "English",
+    "简体中文": "Chinese",
+    "中文": "Chinese",
+    "simplified chinese": "Chinese",
+    "chinese": "Chinese",
+    "traditional chinese": "Traditional Chinese",
+    "繁体中文": "Traditional Chinese",
+    "zh-hans": "Chinese",
+    "zh-cn": "Chinese",
+    "zh-hant": "Traditional Chinese",
+    # Full Chinese aliases from qwen-mt language list
+    "俄语": "Russian",
+    "日语": "Japanese",
+    "韩语": "Korean",
+    "西班牙语": "Spanish",
+    "法语": "French",
+    "葡萄牙语": "Portuguese",
+    "德语": "German",
+    "意大利语": "Italian",
+    "泰语": "Thai",
+    "越南语": "Vietnamese",
+    "印度尼西亚语": "Indonesian",
+    "马来语": "Malay",
+    "阿拉伯语": "Arabic",
+    "印地语": "Hindi",
+    "希伯来语": "Hebrew",
+    "缅甸语": "Burmese",
+    "泰米尔语": "Tamil",
+    "乌尔都语": "Urdu",
+    "孟加拉语": "Bengali",
+    "波兰语": "Polish",
+    "荷兰语": "Dutch",
+    "罗马尼亚语": "Romanian",
+    "土耳其语": "Turkish",
+    "高棉语": "Khmer",
+    "老挝语": "Lao",
+    "粤语": "Cantonese",
+    "捷克语": "Czech",
+    "希腊语": "Greek",
+    "瑞典语": "Swedish",
+    "匈牙利语": "Hungarian",
+    "丹麦语": "Danish",
+    "芬兰语": "Finnish",
+    "乌克兰语": "Ukrainian",
+    "保加利亚语": "Bulgarian",
+    "塞尔维亚语": "Serbian",
+    "泰卢固语": "Telugu",
+    "南非荷兰语": "Afrikaans",
+    "亚美尼亚语": "Armenian",
+    "阿萨姆语": "Assamese",
+    "阿斯图里亚斯语": "Asturian",
+    "巴斯克语": "Basque",
+    "白俄罗斯语": "Belarusian",
+    "波斯尼亚语": "Bosnian",
+    "加泰罗尼亚语": "Catalan",
+    "宿务语": "Cebuano",
+    "克罗地亚语": "Croatian",
+    "埃及阿拉伯语": "Egyptian Arabic",
+    "爱沙尼亚语": "Estonian",
+    "加利西亚语": "Galician",
+    "格鲁吉亚语": "Georgian",
+    "古吉拉特语": "Gujarati",
+    "冰岛语": "Icelandic",
+    "爪哇语": "Javanese",
+    "卡纳达语": "Kannada",
+    "哈萨克语": "Kazakh",
+    "拉脱维亚语": "Latvian",
+    "立陶宛语": "Lithuanian",
+    "卢森堡语": "Luxembourgish",
+    "马其顿语": "Macedonian",
+    "马加希语": "Maithili",
+    "马耳他语": "Maltese",
+    "马拉地语": "Marathi",
+    "美索不达米亚阿拉伯语": "Mesopotamian Arabic",
+    "摩洛哥阿拉伯语": "Moroccan Arabic",
+    "内志阿拉伯语": "Najdi Arabic",
+    "尼泊尔语": "Nepali",
+    "北阿塞拜疆语": "North Azerbaijani",
+    "北黎凡特阿拉伯语": "North Levantine Arabic",
+    "北乌兹别克语": "Northern Uzbek",
+    "书面语挪威语": "Norwegian Bokmål",
+    "新挪威语": "Norwegian Nynorsk",
+    "奥克语": "Occitan",
+    "奥里亚语": "Odia",
+    "邦阿西楠语": "Pangasinan",
+    "西西里语": "Sicilian",
+    "信德语": "Sindhi",
+    "僧伽罗语": "Sinhala",
+    "斯洛伐克语": "Slovak",
+    "斯洛文尼亚语": "Slovenian",
+    "南黎凡特阿拉伯语": "South Levantine Arabic",
+    "斯瓦希里语": "Swahili",
+    "他加禄语": "Tagalog",
+    "塔伊兹-亚丁阿拉伯语": "Ta'izzi-Adeni Arabic",
+    "托斯克阿尔巴尼亚语": "Tosk Albanian",
+    "突尼斯阿拉伯语": "Tunisian Arabic",
+    "威尼斯语": "Venetian",
+    "瓦莱语": "Waray",
+    "威尔士语": "Welsh",
+    "西波斯语": "Western Persian",
+    # English punctuation/variant aliases
+    "norwegian bokmal": "Norwegian Bokmål",
+    "ta'izzi-adeni arabic": "Ta'izzi-Adeni Arabic",
+}
+
 class Agent:
 
     def __init__(self, config: AgentConfig):
@@ -316,6 +533,10 @@ class Agent:
         self.rate_limiter = RateLimiter(rpm=config.rpm, tpm=config.tpm)
 
         self.provider = config.provider if config.provider is not None else get_provider_by_domain(self.domain)
+        self.is_mt_mode = "mt" in self.model_id.lower()
+        self.mt_source_lang = getattr(config, "source_lang", "auto")
+        self.mt_target_lang = getattr(config, "to_lang", None)
+        self.mt_domains = getattr(config, "custom_prompt", None)
 
     def _estimate_tokens(self, text: str) -> int:
         """
@@ -352,6 +573,43 @@ class Agent:
         elif self.thinking == "disable":
             data[field_thinking] = val_disable
 
+    def _normalize_mt_lang(self, lang: str | None) -> str | None:
+        if lang is None:
+            return None
+        lang_text = str(lang).strip()
+        if not lang_text:
+            return None
+        key = _normalize_mt_lang_key(lang_text)
+        if key in _MT_LANG_BY_CODE:
+            return _MT_LANG_BY_CODE[key]
+        if key in _MT_LANG_BY_NAME:
+            return _MT_LANG_BY_NAME[key]
+        if key in _MT_LANG_ALIASES:
+            return _MT_LANG_ALIASES[key]
+        return lang_text
+
+    def _build_mt_translation_options(self) -> dict:
+        translation_options = {}
+
+        source_lang = self._normalize_mt_lang(self.mt_source_lang)
+        if source_lang:
+            translation_options["source_lang"] = source_lang
+
+        target_lang = self._normalize_mt_lang(self.mt_target_lang)
+        if target_lang:
+            translation_options["target_lang"] = target_lang
+
+        domains = str(self.mt_domains).strip() if self.mt_domains is not None else ""
+        if domains:
+            translation_options["domains"] = domains
+
+        return translation_options
+
+    def _build_mt_user_prompt(self, prompt: str, system_prompt: str) -> str:
+        # MT模式下，直接返回原始prompt，不添加任何system prompt
+        # MT模型会把整个user prompt当作待翻译内容
+        return prompt
+
     def _prepare_request_data(
             self, prompt: str, system_prompt: str, temperature=None, top_p=0.9, json_format=False
     ):
@@ -361,6 +619,19 @@ class Agent:
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.key}",
         }
+
+        if self.is_mt_mode:
+            data = {
+                "model": self.model_id,
+                "messages": [
+                    {"role": "user", "content": self._build_mt_user_prompt(prompt, system_prompt)},
+                ],
+            }
+            translation_options = self._build_mt_translation_options()
+            if translation_options:
+                data["translation_options"] = translation_options
+            return headers, data
+
         data = {
             "model": self.model_id,
             "messages": [

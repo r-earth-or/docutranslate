@@ -32,15 +32,15 @@ For each Key-Value Pair in the JSON, translate the contents of the value into {t
 > The segment IDs in the output must exactly match those in the input. And all segment IDs in input must appear in the output.
 > If necessary, two segments can only be translated together, the translation should be proportionally allocated to the corresponding key's value based on the word count ratio of the segments.
 
-Here is an example of the expected format:
+Here is an example of the expected format (Note: This is ONLY a format example, do NOT translate the example content):
 
 <example>
 Input:
 
 ```json
 {{
-"3":source,
-"4":source,
+"EXAMPLE_KEY_1": "source text",
+"EXAMPLE_KEY_2": "source text"
 }}
 ```
 
@@ -48,8 +48,8 @@ Output(target language: {to_lang}):
 
 ```json
 {{
-"3":translation,
-"4":translation,
+"EXAMPLE_KEY_1": "translated text",
+"EXAMPLE_KEY_2": "translated text"
 }}
 ```
 For statements that must be combined during translation, employ merging at the minimal structural level. The total number of keys must remain unchanged after merging, and any empty values should be retained.
@@ -58,18 +58,20 @@ Below is an example of how merging should be done when necessary:
 input:
 ```json
 {{
-"3":"汤姆说:“杰克你",
-"4":"好”。"
+"EXAMPLE_KEY_1":"汤姆说:“杰克你",
+"EXAMPLE_KEY_2":"好”。"
 }}
 ```
 output:
 ```json
 {{
-"3":"Tom says:\"Hello Jack.\"",
-"4":""
+"EXAMPLE_KEY_1":"Tom says:\"Hello Jack.\"",
+"EXAMPLE_KEY_2":""
 }}
 ```
 </example>
+
+IMPORTANT: Only translate the content in the <input> section above. Do NOT include or translate the example content from this <example> section in your output.
 Please return the translated JSON directly without including any additional information and preserve special tags or untranslatable elements (such as code, brand names, technical terms) as they are.
 """
 
@@ -124,8 +126,13 @@ class SegmentsTranslateAgent(Agent):
         - 如果键完全匹配，返回翻译结果。
         - 如果键不匹配，构造一个部分成功的结果，并通过 PartialTranslationError 异常抛出，以触发重试。
         - 其他错误（如JSON解析失败、模型偷懒）则抛出普通 ValueError 触发重试。
+        - MT模式下，如果返回的是纯文本而非JSON，将其按行分割并映射到原始键。
         """
-        original_segments = get_original_segments(origin_prompt)
+        # MT模式下直接解析origin_prompt为JSON（纯净JSON，没有<input>包装）
+        if self.is_mt_mode:
+            original_segments = origin_prompt
+        else:
+            original_segments = get_original_segments(origin_prompt)
         result = get_target_segments(result)
         if result == "":
             if original_segments.strip() != "":
@@ -136,6 +143,37 @@ class SegmentsTranslateAgent(Agent):
             result = fix_json_string(result)
             original_chunk = json_repair.loads(original_segments)
             repaired_result = json_repair.loads(result)
+
+            # MT模式兼容：处理各种非标准返回格式
+            if self.is_mt_mode:
+                # 如果是列表，尝试合并所有字典
+                if isinstance(repaired_result, list):
+                    logger.debug(f"[MT模式] 返回结果是列表，包含 {len(repaired_result)} 个元素")
+                    merged_result = {}
+                    for item in repaired_result:
+                        if isinstance(item, dict):
+                            merged_result.update(item)
+                    repaired_result = merged_result
+
+                # 如果返回的是纯文本（字符串），尝试将其映射到原始键
+                if isinstance(repaired_result, str):
+                    original_keys = list(original_chunk.keys())
+                    # 按行分割结果，去除空行
+                    result_lines = [line.strip() for line in repaired_result.split('\n') if line.strip()]
+
+                    # 如果只有一行结果但多个键，将整个结果分配给第一个键，其余为空
+                    if len(result_lines) == 1 and len(original_keys) > 1:
+                        repaired_result = {original_keys[0]: result_lines[0]}
+                        for key in original_keys[1:]:
+                            repaired_result[key] = ""
+                    # 如果结果行数与键数匹配，逐行对应
+                    elif len(result_lines) == len(original_keys):
+                        repaired_result = {original_keys[i]: result_lines[i] for i in range(len(original_keys))}
+                    # 如果结果行数不匹配，将所有结果合并给第一个键
+                    else:
+                        repaired_result = {original_keys[0]: repaired_result}
+                        for key in original_keys[1:]:
+                            repaired_result[key] = ""
 
             if not isinstance(repaired_result, dict):
                 raise AgentResultError(f"Agent返回结果不是dict的json形式, result: {result}")
@@ -174,6 +212,32 @@ class SegmentsTranslateAgent(Agent):
             return repaired_result
 
         except (RuntimeError, JSONDecodeError) as e:
+            # MT模式兼容：如果JSON解析失败，尝试将结果作为纯文本处理
+            if self.is_mt_mode:
+                try:
+                    original_chunk = json_repair.loads(original_segments)
+                    original_keys = list(original_chunk.keys())
+                    result_lines = [line.strip() for line in result.split('\n') if line.strip()]
+
+                    if len(result_lines) == 1 and len(original_keys) > 1:
+                        repaired_result = {original_keys[0]: result_lines[0]}
+                        for key in original_keys[1:]:
+                            repaired_result[key] = ""
+                    elif len(result_lines) == len(original_keys):
+                        repaired_result = {original_keys[i]: result_lines[i] for i in range(len(original_keys))}
+                    else:
+                        repaired_result = {original_keys[0]: result}
+                        for key in original_keys[1:]:
+                            repaired_result[key] = ""
+
+                    # 验证结果
+                    if set(repaired_result.keys()) != set(original_chunk.keys()):
+                        raise AgentResultError(f"MT模式解析后键不匹配")
+
+                    return repaired_result
+                except Exception as mt_e:
+                    raise AgentResultError(f"MT模式纯文本处理失败: {mt_e.__repr__()}")
+
             # 对于JSON解析等硬性错误，继续抛出普通ValueError
             raise AgentResultError(f"结果处理失败: {e.__repr__()}")
 
@@ -182,7 +246,11 @@ class SegmentsTranslateAgent(Agent):
         处理在所有重试后仍然失败的请求。
         作为备用方案，返回原文内容，并将所有值转换为字符串。
         """
-        original_segments = get_original_segments(origin_prompt)
+        # MT模式下直接解析origin_prompt为JSON（纯净JSON，没有<input>包装）
+        if self.is_mt_mode:
+            original_segments = origin_prompt
+        else:
+            original_segments = get_original_segments(origin_prompt)
         if original_segments == "":
             return {}
         try:
@@ -198,7 +266,11 @@ class SegmentsTranslateAgent(Agent):
 
     def send_segments(self, segments: list[str], chunk_size: int) -> list[str]:
         indexed_originals, chunks, merged_indices_list = segments2json_chunks(segments, chunk_size)
-        prompts = [generate_prompt(json.dumps(chunk, ensure_ascii=False, indent=0), self.to_lang) for chunk in chunks]
+        # MT模式下直接发送纯净JSON，不添加额外提示词
+        if self.is_mt_mode:
+            prompts = [json.dumps(chunk, ensure_ascii=False, indent=0) for chunk in chunks]
+        else:
+            prompts = [generate_prompt(json.dumps(chunk, ensure_ascii=False, indent=0), self.to_lang) for chunk in chunks]
         translated_chunks = super().send_prompts(prompts=prompts, json_format=self.force_json,
                                                  pre_send_handler=self._pre_send_handler,
                                                  result_handler=self._result_handler,
@@ -236,7 +308,11 @@ class SegmentsTranslateAgent(Agent):
     async def send_segments_async(self, segments: list[str], chunk_size: int) -> list[str]:
         indexed_originals, chunks, merged_indices_list = await asyncio.to_thread(segments2json_chunks, segments,
                                                                                  chunk_size)
-        prompts = [generate_prompt(json.dumps(chunk, ensure_ascii=False, indent=0), self.to_lang) for chunk in chunks]
+        # MT模式下直接发送纯净JSON，不添加额外提示词
+        if self.is_mt_mode:
+            prompts = [json.dumps(chunk, ensure_ascii=False, indent=0) for chunk in chunks]
+        else:
+            prompts = [generate_prompt(json.dumps(chunk, ensure_ascii=False, indent=0), self.to_lang) for chunk in chunks]
 
         translated_chunks = await super().send_prompts_async(prompts=prompts, force_json=self.force_json,
                                                              pre_send_handler=self._pre_send_handler,
