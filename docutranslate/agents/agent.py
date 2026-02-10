@@ -319,10 +319,12 @@ class Agent:
 
     def _is_qwen_mt_model(self) -> bool:
         """
-        检测是否为 qwen-mt 系列模型。
-        qwen-mt 模型不支持 system prompt，需要将 system prompt 合并到 user message 中。
+        Detects whether this is a qwen-mt series model.
+        qwen-mt models do not support system prompts and require merging 
+        the system prompt into the user message.
         """
-        return "mt" in self.model_id.lower()
+        model_id_lower = self.model_id.lower()
+        return "qwen" in model_id_lower and "mt" in model_id_lower
 
     def _estimate_tokens(self, text: str) -> int:
         """
@@ -369,7 +371,7 @@ class Agent:
             "Authorization": f"Bearer {self.key}",
         }
         
-        # qwen-mt 系列模型不支持 system prompt，需要将其合并到 user message 中
+        # qwen-mt series models do not support system prompts, so merge it into the user message
         if self._is_qwen_mt_model():
             messages = [
                 {"role": "user", "content": f"{system_prompt}\n\n{prompt}"},
