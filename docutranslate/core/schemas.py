@@ -129,7 +129,7 @@ class BaseWorkflowParams(BaseModel):
     )
     source_lang: Optional[str] = Field(
         default="auto",
-        description="Source language for specialized translation models like qwen-mt. Defaults to 'auto' for automatic detection.",
+        description="源语言，用于qwen-mt等专门翻译模型。默认为'auto'自动检测。",
         examples=["auto", "English", "中文"],
     )
     chunk_size: int = Field(
