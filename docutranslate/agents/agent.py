@@ -18,6 +18,7 @@ import httpx
 
 from docutranslate.agents.provider import get_provider_by_domain
 from docutranslate.agents.thinking.thinking_factory import get_thinking_mode, ProviderType
+from docutranslate.agents.language_mapper import normalize_language_code
 from docutranslate.logger import global_logger
 from docutranslate.utils.utils import get_httpx_proxies
 
@@ -403,10 +404,16 @@ class Agent:
         # Add translation_options for qwen-mt models
         if self._is_qwen_mt_model():
             translation_options = {}
-            if self.source_lang:
-                translation_options["source_lang"] = self.source_lang
+            
+            # source_lang默认为"auto"让模型自动识别
+            source_lang_code = normalize_language_code(self.source_lang, for_qwen_mt=True) if self.source_lang else "auto"
+            translation_options["source_lang"] = source_lang_code
+            
+            # target_lang是必需的，转换为qwen-mt需要的语言代码
             if self.to_lang:
-                translation_options["target_lang"] = self.to_lang
+                target_lang_code = normalize_language_code(self.to_lang, for_qwen_mt=True)
+                translation_options["target_lang"] = target_lang_code
+            
             # Add domain hints from system_prompt if available
             # Domain hints only support English
             if system_prompt and system_prompt.strip():
