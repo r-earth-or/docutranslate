@@ -157,6 +157,9 @@ class BaseWorkflowParams(BaseModel):
     custom_prompt: Optional[str] = Field(
         default="", description="用户自定义的翻译Prompt。", alias="custom_prompt"
     )
+    source_lang: Optional[str] = Field(
+        default=None, description="源语言（qwen-mt系列模型专用，如 'Chinese'、'English'）。", examples=[None]
+    )
     glossary_dict: Optional[Dict[str, str]] = Field(
         None, description="术语表字典，key为原文，value为译文。", examples=[None]
     )

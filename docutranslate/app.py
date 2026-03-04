@@ -2472,6 +2472,25 @@ async def service_flat_translate(
     })
 
 
+@app.get("/api/config", tags=["Config"], summary="获取服务端环境变量默认配置")
+async def get_config():
+    """返回由服务端环境变量预设的前端默认配置，不含敏感信息（API key 仅返回是否存在）。"""
+    from docutranslate.environment import (
+        DOCUTRANSLATE_BASE_URL,
+        DOCUTRANSLATE_API_KEY,
+        DOCUTRANSLATE_MODEL_ID,
+        DOCUTRANSLATE_RPM,
+        DOCUTRANSLATE_TPM,
+    )
+    return JSONResponse({
+        "base_url": DOCUTRANSLATE_BASE_URL,
+        "api_key": DOCUTRANSLATE_API_KEY,
+        "model_id": DOCUTRANSLATE_MODEL_ID,
+        "rpm": DOCUTRANSLATE_RPM,
+        "tpm": DOCUTRANSLATE_TPM,
+    })
+
+
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def main_page():
     index_path = Path(STATIC_DIR) / "index.html"

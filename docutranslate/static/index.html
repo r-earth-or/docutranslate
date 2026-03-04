@@ -596,6 +596,7 @@
                                                 <option value="Portuguese">葡萄牙文(Português)</option>
                                                 <option value="Arabic">阿拉伯文(العَرَبِيَّة)</option>
                                                 <option value="Vietnamese">越南文(tiếng Việt)</option>
+                                                <option value="Indonesian">印尼文(Bahasa Indonesia)</option>
                                                 <option value="custom">{{ t('targetLanguageCustom') }}</option>
                                             </select>
                                             <div class="mt-2" v-if="form.to_lang === 'custom'">
@@ -673,7 +674,7 @@
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                             data-bs-target="#collapseGlossary">
-                                        <strong><span class="step-number">{{ stepMap.glossary }} </span><i
+                                        <strong><i
                                                 class="bi bi-journal-bookmark me-2"></i><span>{{ t('glossaryGenTitle')
                                             }}</span></strong>
                                     </button>
@@ -696,148 +697,6 @@
                                                     <i class="bi bi-trash me-1"></i><span>{{ t('clearGlossaryBtn')
                                                     }}</span>
                                                 </button>
-                                            </div>
-                                        </div>
-
-                                        <div class="form-check form-switch mb-3 border-top pt-3">
-                                            <input class="form-check-input" type="checkbox" role="switch"
-                                                   v-model="form.glossary_generate_enable"
-                                                   @change="saveSetting('glossary_generate_enable', form.glossary_generate_enable)">
-                                            <label class="form-check-label">{{ t('glossaryGenEnableLabel') }}</label>
-                                        </div>
-
-                                        <div v-if="form.glossary_generate_enable">
-                                            <div class="mb-3">
-                                                <label class="form-label">{{ t('glossaryCustomPromptLabel') }}</label>
-                                                <textarea class="form-control"
-                                                          v-model="form.glossary_agent_custom_prompt"
-                                                          @input="saveSetting('glossary_agent_custom_prompt', form.glossary_agent_custom_prompt)"
-                                                          rows="3"
-                                                          :placeholder="t('glossaryCustomPromptPlaceholder')"></textarea>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">{{ t('glossaryGenConfigLabel') }}</label>
-                                                <div class="btn-group w-100">
-                                                    <input type="radio" class="btn-check" value="same" id="gSame"
-                                                           v-model="form.glossary_agent_config_choice"
-                                                           @change="saveSetting('glossary_agent_config_choice', 'same')">
-                                                    <label class="btn btn-outline-primary"
-                                                           for="gSame">{{ t('glossaryGenConfigSame') }}</label>
-                                                    <input type="radio" class="btn-check" value="custom" id="gCustom"
-                                                           v-model="form.glossary_agent_config_choice"
-                                                           @change="saveSetting('glossary_agent_config_choice', 'custom')">
-                                                    <label class="btn btn-outline-primary"
-                                                           for="gCustom">{{ t('glossaryGenConfigCustom') }}</label>
-                                                </div>
-                                            </div>
-
-                                            <div v-if="form.glossary_agent_config_choice === 'custom'"
-                                                 class="border p-3 rounded">
-                                                <platform-selector
-                                                        v-model:platform="form.glossary_agent_platform"
-                                                        v-model:base-url="form.glossary_agent_baseurl"
-                                                        v-model:api-key="form.glossary_agent_key"
-                                                        v-model:model-id="form.glossary_agent_model_id"
-                                                        v-model:provider="form.glossary_agent_provider"
-                                                        :t="t" prefix="glossary_agent_platform"></platform-selector>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label">{{ t('targetLanguageLabel') }}</label>
-                                                    <select class="form-select" v-model="form.glossary_agent_to_lang"
-                                                            @change="saveSetting('glossary_agent_to_lang', form.glossary_agent_to_lang)">
-                                                        <option value="Simplified Chinese">中文(简体中文)</option>
-                                                        <option value="English">英文(English)</option>
-                                                        <option value="Spanish">西班牙文(Español)</option>
-                                                        <option value="French">法文(Français)</option>
-                                                        <option value="German">德文(Deutsch)</option>
-                                                        <option value="Japanese">日文(日本語)</option>
-                                                        <option value="Korean">韩文(한국어)</option>
-                                                        <option value="Russian">俄文(Русский)</option>
-                                                        <option value="Portuguese">葡萄牙文(Português)</option>
-                                                        <option value="Arabic">阿拉伯文(العَرَبِيَّة)</option>
-                                                        <option value="Vietnamese">越南文(tiếng Việt)</option>
-                                                        <option value="custom">{{ t('targetLanguageCustom') }}</option>
-                                                    </select>
-                                                    <div class="mt-2" v-if="form.glossary_agent_to_lang === 'custom'">
-                                                        <input type="text" class="form-control"
-                                                               v-model="form.glossary_agent_custom_to_lang"
-                                                               @input="saveSetting('glossary_agent_custom_to_lang', form.glossary_agent_custom_to_lang)"
-                                                               :placeholder="t('customLangPlaceholder')">
-                                                    </div>
-                                                </div>
-
-                                                <slider-control :label="t('chunkSizeLabel')"
-                                                                v-model="form.glossary_agent_chunk_size"
-                                                                save-key="glossary_agent_chunk_size"
-                                                                :default-val="defaultParams.chunk_size" :min="1000"
-                                                                :max="8000" :step="100" :t="t"></slider-control>
-                                                <slider-control :label="t('concurrentLabel')"
-                                                                v-model="form.glossary_agent_concurrent"
-                                                                save-key="glossary_agent_concurrent"
-                                                                :default-val="defaultParams.concurrent" :min="1"
-                                                                :max="120" :step="1" :t="t"></slider-control>
-                                                <slider-control label="Temperature"
-                                                                v-model="form.glossary_agent_temperature"
-                                                                save-key="glossary_agent_temperature" :default-val="0.7"
-                                                                :min="0" :max="2" :step="0.1" :t="t"></slider-control>
-                                                <slider-control :label="t('retryLabel')"
-                                                                v-model="form.glossary_agent_retry"
-                                                                save-key="glossary_agent_retry"
-                                                                :default-val="defaultParams.retry" :min="1" :max="6"
-                                                                :step="1" :t="t"></slider-control>
-
-                                                <!-- Glossary Agent RPM/TPM [Vertical Layout] -->
-                                                <div class="mb-3">
-                                                    <label class="form-label">RPM <small
-                                                            class="text-muted">({{ t('rpmLabel')
-                                                        }})</small></label>
-                                                    <input type="number" class="form-control"
-                                                           v-model="form.glossary_agent_rpm"
-                                                           @input="saveSetting('glossary_agent_rpm', form.glossary_agent_rpm)"
-                                                           min="1" :placeholder="t('unlimitedPlaceholder')">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">TPM <small
-                                                            class="text-muted">({{ t('tpmLabel')
-                                                        }})</small></label>
-                                                    <input type="number" class="form-control"
-                                                           v-model="form.glossary_agent_tpm"
-                                                           @input="saveSetting('glossary_agent_tpm', form.glossary_agent_tpm)"
-                                                           min="1" :placeholder="t('unlimitedPlaceholder')">
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label class="form-label">{{ t('thinkingModeLabel') }}</label>
-                                                    <div class="btn-group w-100">
-                                                        <input type="radio" class="btn-check" value="enable"
-                                                               id="gtEnable" v-model="form.glossary_agent_thinking"
-                                                               @change="saveSetting('glossary_agent_thinking_mode', 'enable')">
-                                                        <label class="btn btn-outline-primary"
-                                                               for="gtEnable">{{ t('thinkingModeEnable') }}</label>
-                                                        <input type="radio" class="btn-check" value="disable"
-                                                               id="gtDisable" v-model="form.glossary_agent_thinking"
-                                                               @change="saveSetting('glossary_agent_thinking_mode', 'disable')">
-                                                        <label class="btn btn-outline-primary"
-                                                               for="gtDisable">{{ t('thinkingModeDisable') }}</label>
-                                                        <input type="radio" class="btn-check" value="default"
-                                                               id="gtDefault" v-model="form.glossary_agent_thinking"
-                                                               @change="saveSetting('glossary_agent_thinking_mode', 'default')">
-                                                        <label class="btn btn-outline-primary"
-                                                               for="gtDefault">{{ t('thinkingModeDefault') }}</label>
-                                                    </div>
-                                                </div>
-                                                <div class="form-check form-switch mb-3">
-                                                    <input class="form-check-input" type="checkbox" role="switch"
-                                                           v-model="form.glossary_agent_system_proxy_enable"
-                                                           @change="saveSetting('glossary_agent_system_proxy_enable', form.glossary_agent_system_proxy_enable)">
-                                                    <label class="form-check-label">{{ t('systemProxyLabel') }}</label>
-                                                </div>
-                                                <div class="form-check form-switch mb-3">
-                                                    <input class="form-check-input" type="checkbox" role="switch"
-                                                           v-model="form.glossary_agent_force_json"
-                                                           @change="saveSetting('glossary_agent_force_json', form.glossary_agent_force_json)">
-                                                    <label class="form-check-label">{{ t('forceJson') }}</label>
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1447,25 +1306,6 @@
                 retry: 3,
                 rpm: null, // New RPM
                 tpm: null, // New TPM
-                glossary_generate_enable: false,
-                glossary_agent_custom_prompt: '',
-                glossary_agent_config_choice: 'same',
-                glossary_agent_platform: 'https://api.302.ai/v1',
-                glossary_agent_baseurl: '',
-                glossary_agent_key: '',
-                glossary_agent_model_id: '',
-                glossary_agent_provider: 'api.openai.com', // Default glossary provider
-                glossary_agent_to_lang: 'Simplified Chinese',
-                glossary_agent_custom_to_lang: '',
-                glossary_agent_chunk_size: 1000,
-                glossary_agent_concurrent: 5,
-                glossary_agent_temperature: 0.7,
-                glossary_agent_retry: 3,
-                glossary_agent_thinking: 'default',
-                glossary_agent_system_proxy_enable: false,
-                glossary_agent_force_json: false,
-                glossary_agent_rpm: null, // New Glossary Agent RPM
-                glossary_agent_tpm: null  // New Glossary Agent TPM
             });
 
             // Nested Params for specific workflows
@@ -1497,7 +1337,7 @@
                     return (v === null || v === '' || v === 'null') ? null : Number(v);
                 };
 
-                form.workflow_type = get('translator_last_workflow', 'markdown_based');
+                form.workflow_type = get('translator_last_workflow', 'docx');
                 form.auto_workflow_enabled = getBool('translator_auto_workflow_enabled', true);
                 form.convert_engine = get('translator_convert_engin', 'mineru');
                 form.mineru_token = get('translator_mineru_token', '');
@@ -1516,12 +1356,12 @@
                 form.formula_ocr = getBool('translator_formula_ocr', true);
                 form.code_ocr = getBool('translator_code_ocr', true);
                 form.skip_translate = getBool('translator_skip_translate', false);
-                form.platform = get('translator_platform_last_platform', 'https://api.302.ai/v1');
+                form.platform = get('translator_platform_last_platform', 'custom');
                 form.system_proxy_enable = getBool('translator_system_proxy_enable', false);
                 form.force_json = getBool('translator_force_json', false);
                 form.to_lang = get('translator_to_lang', 'Simplified Chinese');
                 form.custom_to_lang = get('translator_custom_to_lang', '');
-                form.thinking = get('translator_thinking_mode', 'disable');
+                form.thinking = get('translator_thinking_mode', 'default');
                 form.custom_prompt = get('custom_prompt', '');
                 form.chunk_size = getNum('chunk_size', 1000);
                 form.concurrent = getNum('concurrent', 5);
@@ -1539,30 +1379,6 @@
                     form.provider = platObj ? platObj.provider : '';
                 }
 
-                form.glossary_generate_enable = getBool('glossary_generate_enable', false);
-                form.glossary_agent_custom_prompt = get('glossary_agent_custom_prompt', '');
-                form.glossary_agent_config_choice = get('glossary_agent_config_choice', 'same');
-                form.glossary_agent_platform = get('glossary_agent_platform_last_platform', 'https://api.302.ai/v1');
-                form.glossary_agent_to_lang = get('glossary_agent_to_lang', 'Simplified Chinese');
-                form.glossary_agent_custom_to_lang = get('glossary_agent_custom_to_lang', '');
-                form.glossary_agent_chunk_size = getNum('glossary_agent_chunk_size', 1000);
-                form.glossary_agent_concurrent = getNum('glossary_agent_concurrent', 5);
-                form.glossary_agent_temperature = getNum('glossary_agent_temperature', 0.7);
-                form.glossary_agent_retry = getNum('glossary_agent_retry', 3);
-                form.glossary_agent_thinking = get('glossary_agent_thinking_mode', 'default');
-                form.glossary_agent_system_proxy_enable = getBool('glossary_agent_system_proxy_enable', false);
-                form.glossary_agent_force_json = getBool('glossary_agent_force_json', false);
-                form.glossary_agent_rpm = getNumOrNull('glossary_agent_rpm'); // Load Glossary RPM
-                form.glossary_agent_tpm = getNumOrNull('glossary_agent_tpm'); // Load Glossary TPM
-
-                // Determine Glossary Provider
-                const gPlatObj = KNOWN_PLATFORMS.find(p => p.val === form.glossary_agent_platform);
-                if (form.glossary_agent_platform === 'custom') {
-                    form.glossary_agent_provider = get('glossary_agent_platform_custom_provider', 'default');
-                } else {
-                    form.glossary_agent_provider = gPlatObj ? gPlatObj.provider : '';
-                }
-
                 // Restore workflow specific params
                 ['txt', 'xlsx', 'docx', 'srt', 'epub', 'html', 'ass', 'pptx'].forEach(t => {
                     workflowParams[t].insert_mode = get(`translator_${t}_insert_mode`, 'replace');
@@ -1574,7 +1390,6 @@
 
                 // Trigger platform updates to load API keys/models
                 updatePlatformParams(form.platform, 'translator_platform', form);
-                updatePlatformParams(form.glossary_agent_platform, 'glossary_agent_platform', form, true);
             };
 
             // --- 新增：专门用于将当前 form 数据全部写入 localStorage 的函数 ---
@@ -1626,30 +1441,7 @@
                 s('translator_provider', f.provider);
                 if (f.platform === 'custom') s('translator_platform_custom_base_url', f.base_url);
 
-                // 2. 术语表相关
-                s('glossary_generate_enable', f.glossary_generate_enable);
-                s('glossary_agent_custom_prompt', f.glossary_agent_custom_prompt);
-                s('glossary_agent_config_choice', f.glossary_agent_config_choice);
-                s('glossary_agent_platform_last_platform', f.glossary_agent_platform);
-                s('glossary_agent_to_lang', f.glossary_agent_to_lang);
-                s('glossary_agent_custom_to_lang', f.glossary_agent_custom_to_lang);
-                s('glossary_agent_chunk_size', f.glossary_agent_chunk_size);
-                s('glossary_agent_concurrent', f.glossary_agent_concurrent);
-                s('glossary_agent_temperature', f.glossary_agent_temperature);
-                s('glossary_agent_retry', f.glossary_agent_retry);
-                s('glossary_agent_thinking_mode', f.glossary_agent_thinking);
-                s('glossary_agent_system_proxy_enable', f.glossary_agent_system_proxy_enable);
-                s('glossary_agent_force_json', f.glossary_agent_force_json);
-                s('glossary_agent_rpm', f.glossary_agent_rpm || '');
-                s('glossary_agent_tpm', f.glossary_agent_tpm || '');
-
-                // 术语表平台 Key
-                s(`glossary_agent_platform_${f.glossary_agent_platform}_apikey`, f.glossary_agent_key);
-                s(`glossary_agent_platform_${f.glossary_agent_platform}_model_id`, f.glossary_agent_model_id);
-                s('glossary_agent_provider', f.glossary_agent_provider);
-                if (f.glossary_agent_platform === 'custom') s('glossary_agent_platform_custom_base_url', f.glossary_agent_baseurl);
-
-                // 3. 自动循环保存所有具体工作流参数 (txt, docx, xlsx...)
+                // 2. 自动循环保存所有具体工作流参数 (txt, docx, xlsx...)
                 for (const [wfType, params] of Object.entries(workflowParams)) {
                     for (const [key, val] of Object.entries(params)) {
                         s(`translator_${wfType}_${key}`, val);
@@ -1657,25 +1449,15 @@
                 }
             };
 
-            const updatePlatformParams = (plat, prefix, target, isGlossary = false) => {
+            const updatePlatformParams = (plat, prefix, target) => {
                 const get = (k) => localStorage.getItem(k) || '';
-                if (isGlossary) {
-                    target.glossary_agent_key = get(`${prefix}_${plat}_apikey`);
-                    target.glossary_agent_model_id = get(`${prefix}_${plat}_model_id`);
-                    target.glossary_agent_baseurl = plat === 'custom' ? get(`${prefix}_custom_base_url`) : plat;
-                } else {
-                    target.api_key = get(`${prefix}_${plat}_apikey`);
-                    target.model_id = get(`${prefix}_${plat}_model_id`);
-                    target.base_url = plat === 'custom' ? get(`${prefix}_custom_base_url`) : plat;
-                }
+                target.api_key = get(`${prefix}_${plat}_apikey`);
+                target.model_id = get(`${prefix}_${plat}_model_id`);
+                target.base_url = plat === 'custom' ? get(`${prefix}_custom_base_url`) : plat;
             };
 
             watch(() => form.platform, (n) => {
                 updatePlatformParams(n, 'translator_platform', form);
-            });
-
-            watch(() => form.glossary_agent_platform, (n) => {
-                updatePlatformParams(n, 'glossary_agent_platform', form, true);
             });
 
             const t = (k) => {
@@ -1751,12 +1533,11 @@
             // Dynamic Step Numbering
             const stepMap = computed(() => {
                 let step = 2;
-                const map = {specific: 0, parsing: 0, ai: 0, trans: 0, glossary: 0};
+                const map = {specific: 0, parsing: 0, ai: 0, trans: 0};
                 if (currentWorkflowConfig.value) map.specific = step++;
                 if (form.workflow_type === 'markdown_based') map.parsing = step++;
                 map.ai = step++;
                 if (!form.skip_translate) map.trans = step++;
-                map.glossary = step++;
                 return map;
             });
 
@@ -1875,33 +1656,11 @@
                     glossary_dict: Object.keys(glossaryData.value).length ? glossaryData.value : null,
                     system_proxy_enable: form.system_proxy_enable,
                     force_json: form.force_json,
-                    glossary_generate_enable: form.glossary_generate_enable,
                     workflow_type: form.workflow_type,
                     rpm: emptyToNull(form.rpm),
                     tpm: emptyToNull(form.tpm)
                 };
 
-                // Agent Config
-                if (basePayload.glossary_generate_enable) {
-                    const isCustom = form.glossary_agent_config_choice === 'custom';
-                    basePayload.glossary_agent_config = {
-                        base_url: isCustom ? emptyToNull(form.glossary_agent_baseurl) : basePayload.base_url,
-                        api_key: isCustom ? (form.glossary_agent_key || "") : basePayload.api_key,
-                        model_id: isCustom ? emptyToNull(form.glossary_agent_model_id) : basePayload.model_id,
-                        provider: isCustom ? emptyToNull(form.glossary_agent_provider) : basePayload.provider, // Add provider
-                        to_lang: isCustom ? (form.glossary_agent_to_lang === 'custom' ? form.glossary_agent_custom_to_lang : form.glossary_agent_to_lang) : basePayload.to_lang,
-                        custom_prompt: emptyToNull(form.glossary_agent_custom_prompt),
-                        temperature: isCustom ? Number(form.glossary_agent_temperature) : basePayload.temperature,
-                        concurrent: isCustom ? Number(form.glossary_agent_concurrent) : basePayload.concurrent,
-                        retry: isCustom ? Number(form.glossary_agent_retry) : basePayload.retry,
-                        thinking: isCustom ? form.glossary_agent_thinking : basePayload.thinking,
-                        system_proxy_enable: isCustom ? form.glossary_agent_system_proxy_enable : basePayload.system_proxy_enable,
-                        chunk_size: isCustom ? Number(form.glossary_agent_chunk_size) : basePayload.chunk_size,
-                        force_json: isCustom ? form.glossary_agent_force_json : basePayload.force_json,
-                        rpm: isCustom ? emptyToNull(form.glossary_agent_rpm) : basePayload.rpm,
-                        tpm: isCustom ? emptyToNull(form.glossary_agent_tpm) : basePayload.tpm
-                    };
-                }
 
                 // Specific Workflow Params
                 if (form.workflow_type === 'markdown_based') {
@@ -2377,13 +2136,31 @@
 
                 // Backend Metadata
                 try {
-                    const [metaRes, enginRes, paramsRes] = await Promise.all([
-                        fetch("/service/meta"), fetch('/service/engin-list'), fetch("/service/default-params")
+                    const [metaRes, enginRes, paramsRes, configRes] = await Promise.all([
+                        fetch("/service/meta"), fetch('/service/engin-list'), fetch("/service/default-params"),
+                        fetch("/api/config")
                     ]);
                     const meta = await metaRes.json();
                     version.value = meta.version;
                     enginList.value = await enginRes.json();
                     Object.assign(defaultParams, await paramsRes.json());
+                    const envConfig = await configRes.json().catch(() => ({}));
+                    // 将服务端环境变量作为 localStorage 未设置时的回退默认值
+                    if (envConfig.base_url && !localStorage.getItem('translator_platform_custom_base_url')) {
+                        localStorage.setItem('translator_platform_custom_base_url', envConfig.base_url);
+                    }
+                    if (envConfig.api_key && !localStorage.getItem('translator_platform_custom_apikey')) {
+                        localStorage.setItem('translator_platform_custom_apikey', envConfig.api_key);
+                    }
+                    if (envConfig.model_id && !localStorage.getItem('translator_platform_custom_model_id')) {
+                        localStorage.setItem('translator_platform_custom_model_id', envConfig.model_id);
+                    }
+                    if (envConfig.rpm != null && !localStorage.getItem('rpm')) {
+                        localStorage.setItem('rpm', String(envConfig.rpm));
+                    }
+                    if (envConfig.tpm != null && !localStorage.getItem('tpm')) {
+                        localStorage.setItem('tpm', String(envConfig.tpm));
+                    }
                 } catch (e) {
                     console.error("Backend init failed", e);
                 }
