@@ -14,3 +14,6 @@ docutranslate/output/
 .idea/
 #claude
 .claude/
+/.omc/
+# Environment variables
+.env

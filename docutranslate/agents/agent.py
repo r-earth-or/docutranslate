@@ -59,6 +59,7 @@ class AgentConfig:
     rpm: int | None = None  # 每分钟请求数限制
     tpm: int | None = None  # 每分钟Token数限制
     provider: ProviderType | None = None
+    source_lang: str | None = None  # qwen-mt: 源语言
 
 
 class TotalErrorCounter:
@@ -534,9 +535,10 @@ class Agent:
 
         self.provider = config.provider if config.provider is not None else get_provider_by_domain(self.domain)
         self.is_mt_mode = "mt" in self.model_id.lower()
-        self.mt_source_lang = getattr(config, "source_lang", "auto")
+        self.mt_source_lang = config.source_lang if config.source_lang else "auto"
         self.mt_target_lang = getattr(config, "to_lang", None)
         self.mt_domains = getattr(config, "custom_prompt", None)
+        self.mt_glossary_dict = getattr(config, "glossary_dict", None)
 
     def _estimate_tokens(self, text: str) -> int:
         """
@@ -588,7 +590,7 @@ class Agent:
             return _MT_LANG_ALIASES[key]
         return lang_text
 
-    def _build_mt_translation_options(self) -> dict:
+    def _build_mt_translation_options(self, prompt: str = "") -> dict:
         translation_options = {}
 
         source_lang = self._normalize_mt_lang(self.mt_source_lang)
@@ -602,6 +604,15 @@ class Agent:
         domains = str(self.mt_domains).strip() if self.mt_domains is not None else ""
         if domains:
             translation_options["domains"] = domains
+
+        if self.mt_glossary_dict:
+            terminology_list = [
+                {"source": src, "target": tgt}
+                for src, tgt in self.mt_glossary_dict.items()
+                if src and tgt and src.lower() in prompt.lower()
+            ]
+            if terminology_list:
+                translation_options["terms"] = terminology_list
 
         return translation_options
 
@@ -627,7 +638,7 @@ class Agent:
                     {"role": "user", "content": self._build_mt_user_prompt(prompt, system_prompt)},
                 ],
             }
-            translation_options = self._build_mt_translation_options()
+            translation_options = self._build_mt_translation_options(prompt=prompt)
             if translation_options:
                 data["translation_options"] = translation_options
             return headers, data
