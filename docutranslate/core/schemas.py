@@ -99,6 +99,11 @@ class BaseWorkflowParams(BaseModel):
         default=False,
         description="是否跳过翻译步骤。如果为True，则仅执行文档解析和格式转换。",
     )
+    model_preset: Optional[str] = Field(
+        default="",
+        description="服务端模型预设ID。设置后会由服务端从环境变量中注入模型配置。",
+        examples=["default"],
+    )
     # 修改: 默认值改为 ""
     base_url: Optional[str] = Field(
         default="",
@@ -196,14 +201,17 @@ class BaseWorkflowParams(BaseModel):
 
         if isinstance(values, dict):
             if not values.get("skip_translate"):
+                has_model_preset = bool(str(values.get("model_preset") or "").strip())
                 # 如果是空字符串 "" (即默认值)，not "" 为 True，会触发错误，符合预期
-                if not (values.get("base_url") or values.get("baseurl")):
+                if not has_model_preset and not (
+                    values.get("base_url") or values.get("baseurl")
+                ):
                     # Auto 模式在校验前不强制要求 base_url
                     if values.get("workflow_type") != "auto":
                         raise ValueError(
                             "当 `skip_translate` 为 `False` 时, `base_url` 或 `baseurl` 字段是必须的。"
                         )
-                if not values.get("model_id"):
+                if not has_model_preset and not values.get("model_id"):
                     if values.get("workflow_type") != "auto":
                         raise ValueError(
                             "当 `skip_translate` 为 `False` 时, `model_id` 字段是必须的。"

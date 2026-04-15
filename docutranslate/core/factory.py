@@ -5,6 +5,7 @@
 import logging
 
 from docutranslate.agents.glossary_agent import GlossaryAgentConfig
+from docutranslate.core.model_presets import apply_model_preset_to_payload
 from docutranslate.core.schemas import TranslatePayload, MarkdownWorkflowParams, TextWorkflowParams, JsonWorkflowParams, \
     XlsxWorkflowParams, DocxWorkflowParams, SrtWorkflowParams, EpubWorkflowParams, HtmlWorkflowParams, \
     AssWorkflowParams, PPTXWorkflowParams
@@ -48,6 +49,8 @@ def create_workflow_from_payload(payload: TranslatePayload, logger: logging.Logg
     """
     根据扁平化的 Payload 配置对象，构建并返回对应的 Workflow 实例。
     """
+    payload = apply_model_preset_to_payload(payload)
+
     if logger is None:
         logger = logging.getLogger("docutranslate.factory")
 
@@ -115,7 +118,7 @@ def create_workflow_from_payload(payload: TranslatePayload, logger: logging.Logg
     for param_type, (TransConf, WorkConf, WorkClass, ExpConf) in mapping.items():
         if isinstance(payload, param_type):
             # 提取通用 Translator 参数
-            dump_exclude = {"workflow_type"}
+            dump_exclude = {"workflow_type", "model_preset"}
             # 特定类型的特殊参数需要保留，例如 json_paths, insert_mode 等
             # model_dump 会自动包含定义在 param_type 中的所有字段
             translator_args = payload.model_dump(exclude=dump_exclude, exclude_none=True)

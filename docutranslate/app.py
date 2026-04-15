@@ -56,9 +56,16 @@ from pydantic import (
 
 from docutranslate import __version__
 from docutranslate.agents.glossary_agent import GlossaryAgentConfig
+from docutranslate.core.model_presets import apply_model_preset_to_payload
 from docutranslate.core.schemas import TranslatePayload, MarkdownWorkflowParams, TextWorkflowParams, JsonWorkflowParams, \
     XlsxWorkflowParams, DocxWorkflowParams, SrtWorkflowParams, EpubWorkflowParams, HtmlWorkflowParams, \
     AssWorkflowParams, PPTXWorkflowParams
+from docutranslate.environment import (
+    DOCUTRANSLATE_RPM,
+    DOCUTRANSLATE_TPM,
+    get_default_model_preset,
+    get_public_model_presets,
+)
 from docutranslate.exporter.md.types import ConvertEngineType
 # --- 核心代码 Imports ---
 from docutranslate.global_values.conditional_import import DOCLING_EXIST
@@ -1341,6 +1348,11 @@ async def _start_translation_task(
         file_contents: bytes,
         original_filename: str,
 ):
+    try:
+        payload = apply_model_preset_to_payload(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     # --- 新增: Auto 工作流路由逻辑 ---
     if payload.workflow_type == "auto":
         detected_type = get_workflow_type_from_filename(original_filename)
@@ -2210,6 +2222,7 @@ async def service_get_app_version():
 async def service_flat_translate(
         request: Request,
         file: UploadFile = File(..., description="要翻译的文件"),
+        model_preset: str = Form("", description="服务端模型预设ID"),
         model_id: str = Form("", description="模型ID (例如: gpt-4o, glm-4-air)，当 skip_translate=False 时必填"),
         base_url: Optional[str] = Form("", description="LLM API 基础 URL (如不填则依赖环境变量或默认值，当 skip_translate=False 时必填)"),
         api_key: str = Form("xx", description="API Key (默认xx)"),
@@ -2307,6 +2320,7 @@ async def service_flat_translate(
     payload_dict = {
         # --- 基础参数 ---
         "workflow_type": workflow_type,
+        "model_preset": model_preset,
         "base_url": base_url,
         "api_key": api_key,
         "model_id": model_id,
@@ -2389,6 +2403,7 @@ async def service_flat_translate(
     try:
         # 使用 TypeAdapter 进行多态校验，将扁平字典转为嵌套的 TranslatePayload 对象
         payload_obj = TypeAdapter(TranslatePayload).validate_python(payload_dict)
+        payload_obj = apply_model_preset_to_payload(payload_obj)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"参数配置校验失败: {str(e)}")
 
@@ -2474,18 +2489,10 @@ async def service_flat_translate(
 
 @app.get("/api/config", tags=["Config"], summary="获取服务端环境变量默认配置")
 async def get_config():
-    """返回由服务端环境变量预设的前端默认配置，不含敏感信息（API key 仅返回是否存在）。"""
-    from docutranslate.environment import (
-        DOCUTRANSLATE_BASE_URL,
-        DOCUTRANSLATE_API_KEY,
-        DOCUTRANSLATE_MODEL_ID,
-        DOCUTRANSLATE_RPM,
-        DOCUTRANSLATE_TPM,
-    )
+    """返回前端可用的模型预设列表与全局默认配置，不包含敏感信息。"""
     return JSONResponse({
-        "base_url": DOCUTRANSLATE_BASE_URL,
-        "api_key": DOCUTRANSLATE_API_KEY,
-        "model_id": DOCUTRANSLATE_MODEL_ID,
+        "model_presets": get_public_model_presets(),
+        "default_model_preset": get_default_model_preset(),
         "rpm": DOCUTRANSLATE_RPM,
         "tpm": DOCUTRANSLATE_TPM,
     })

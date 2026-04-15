@@ -225,16 +225,6 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="d-flex align-items-center">
                             <h4 class="mb-0 me-3 fw-bold" :title="t('pageTitle')">DocuTranslate</h4>
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
-                                        data-bs-target="#tutorialModal">
-                                    <i class="bi bi-question-circle-fill me-1"></i><span>{{ t('tutorialBtn') }}</span>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal"
-                                        data-bs-target="#contributorsModal">
-                                    <i class="bi bi-people-fill me-1"></i><span>{{ t('projectContributeBtn') }}</span>
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -536,17 +526,12 @@
                                         </div>
 
                                         <div v-show="!form.skip_translate">
-                                            <platform-selector
-                                                    v-model:platform="form.platform"
-                                                    v-model:base-url="form.base_url"
-                                                    v-model:api-key="form.api_key"
-                                                    v-model:model-id="form.model_id"
-                                                    v-model:provider="form.provider"
-                                                    :invalid-api-key="errors.api_key"
-                                                    :invalid-base-url="errors.base_url"
-                                                    :invalid-model-id="errors.model_id"
+                                            <model-preset-selector
+                                                    v-model:model-preset="form.model_preset"
+                                                    :presets="modelPresets"
+                                                    :invalid-model-preset="errors.model_preset"
                                                     @clear-error="clearError"
-                                                    :t="t" prefix="translator_platform"></platform-selector>
+                                                    :t="t"></model-preset-selector>
 
                                             <div class="form-check form-switch mb-3">
                                                 <input class="form-check-input" type="checkbox" role="switch"
@@ -717,10 +702,6 @@
 
                     <!-- Project Info -->
                     <div class="mt-4 text-center text-muted small project-info">
-                        <p class="bi bi-github mb-2"> GitHub主页(欢迎star❤): <br/><a
-                                href="https://github.com/xunbu/docutranslate" target="_blank">https://github.com/xunbu/docutranslate</a>
-                        </p>
-                        <p class="bi bi-tencent-qq mb-2"> 交流QQ群: 1047781902 </p>
                         <p class="bi mb-0">version:<span>{{ version ? 'v' + version : '' }}</span></p>
                     </div>
                 </div>
@@ -882,58 +863,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="tutorialModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title"><i
-                        class="bi bi-book-half me-2"></i>{{ t('tutorialModalTitle') }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" v-html="t('tutorialModalBody')"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">{{ t('tutorialUnderstandBtn')
-                        }}
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="contributorsModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title"><i
-                        class="bi bi-heart-fill me-2 text-danger"></i>{{ t('contributorsModalTitle') }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>{{ t('contributorsPara1') }}</p>
-                    <p>{{ t('contributorsPara2') }}</p>
-                    <div class="alert alert-success mt-4" role="alert">
-                        <p>{{ t('contributorsWelcome') }}</p>
-                        <hr>
-                        <p class="mb-0">
-                            <a href="https://github.com/xunbu/docutranslate" target="_blank"
-                               class="btn btn-info btn-sm ms-2"><i
-                                    class="bi bi-github me-1"></i><span>{{ t('contributorsGithub') }}</span></a>
-                            <a href="https://github.com/xunbu/docutranslate/pulls" target="_blank"
-                               class="btn btn-success btn-sm ms-2"><i
-                                    class="bi bi-git me-1"></i><span>{{ t('contributorsPR') }}</span></a>
-                            <a href="https://github.com/xunbu/docutranslate/issues" target="_blank"
-                               class="btn btn-warning btn-sm ms-2"><i
-                                    class="bi bi-bug-fill me-1"></i><span>{{ t('contributorsIssue') }}</span></a>
-                        </p>
-                        <hr>
-                        <p>{{ t('contributorsQQ') }}</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t('closeBtn') }}</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Preview Offcanvas -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="previewOffcanvas" ref="previewOffcanvas">
         <div class="offcanvas-header border-bottom">
@@ -1066,149 +995,31 @@
         }
     };
 
-    const KNOWN_PLATFORMS = [
-        {val: "custom", label: "platformCustom", provider: "default"},
-        {val: "https://api.302.ai/v1", label: "302.AI", provider: ""},
-        {val: "https://api.openai.com/v1", label: "OpenAI", provider: "default"},
-        {
-            val: "https://generativelanguage.googleapis.com/v1beta/openai/",
-            label: "Gemini",
-            provider: "google"
-        },
-        {val: "https://api.deepseek.com/v1", label: "DeepSeek", provider: ""},
-        {
-            val: "https://dashscope.aliyuncs.com/compatible-mode/v1",
-            label: "阿里云百炼(DashScope)",
-            provider: "aliyuncs"
-        },
-        {
-            val: "https://ark.cn-beijing.volces.com/api/v3",
-            label: "火山引擎(volces)",
-            provider: "volces"
-        },
-        {val: "https://api.siliconflow.cn/v1", label: "硅基流动(siliconflow CN)", provider: "siliconflow"},
-        {val: "https://open.bigmodel.cn/api/paas/v4", label: "智谱AI(bigmodel CN)", provider: "bigmodel"},
-        {val: "https://www.dmxapi.cn/v1", label: "DMXAPI_CN", provider: ""},
-        {val: "https://www.dmxapi.com/v1", label: "DMXAPI_GLOBAL", provider: ""},
-        {val: "https://ai.juguang.chat/v1", label: "聚光AI(juguang CN)", provider: ""},
-        {val: "https://openrouter.ai/api/v1", label: "OpenRouter", provider: ""},
-        {val: "http://127.0.0.1:1234/v1", label: "LM Studio", provider: ""},
-        {val: "http://127.0.0.1:11434/v1", label: "Ollama", provider: "ollama"}
-    ];
-
-    const PlatformSelector = {
-        props: ['platform', 'baseUrl', 'apiKey', 'modelId', 'provider', 't', 'prefix', 'invalidApiKey', 'invalidBaseUrl', 'invalidModelId'],
+    const ModelPresetSelector = {
+        props: ['modelPreset', 'presets', 't', 'invalidModelPreset'],
         template: `
           <div>
-            <div class="mb-2">
-              <label class="form-label">{{ t('platformLabel') }}</label>
-              <select class="form-select" :value="platform" @change="handlePlatformChange($event.target.value)">
-                <option v-for="p in platforms" :value="p.val">{{ p.val === 'custom' ? t(p.label) : p.label }}</option>
-              </select>
-            </div>
-
-            <div class="mb-3" v-if="platform === 'custom'">
-              <label class="form-label">{{ t('providerLabel') }}</label>
-              <select class="form-select" :value="provider" @change="handleProviderChange($event.target.value)">
-                <option v-for="prov in providers" :value="prov">{{ prov }}</option>
-              </select>
-            </div>
-
-            <div class="form-text mb-3">Base URL: <code ref="baseUrlDisplay">{{ baseUrl }}</code></div>
-            <div class="mb-3" v-if="platform === 'custom'">
-              <label class="form-label">{{ t('baseUrlLabel') }}</label>
-              <input type="url" class="form-control" :class="{'is-invalid': invalidBaseUrl}"
-                     :value="baseUrl" @input="handleBaseUrlChange($event.target.value)" required
-                     placeholder="OpenAi Compatible URL">
-            </div>
             <div class="mb-3">
-              <label class="form-label">API Key <a v-if="apiHref" :href="apiHref[0]" target="_blank" class="ms-1"><i
-                  class="bi bi-box-arrow-up-right"></i></a> <span
-                  class="ms-2 text-muted small">{{ apiHref && apiHref[1] ? t(apiHref[1]) : '' }}</span></label>
-              <div class="input-group">
-                <input :type="showPass?'text':'password'" class="form-control" :class="{'is-invalid': invalidApiKey}"
-                       :value="apiKey" @input="handleApiKeyChange($event.target.value)"
-                       :placeholder="t('apiKeyPlaceholder')">
-                <button class="btn btn-outline-secondary" type="button" @click="showPass=!showPass"><i class="bi"
-                                                                                                       :class="showPass?'bi-eye':'bi-eye-slash'"></i>
-                </button>
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label">{{ t('modelIdLabel') }}</label>
-              <input type="text" class="form-control" :class="{'is-invalid': invalidModelId}"
-                     :value="modelId" @input="handleModelChange($event.target.value)" required
-                     :placeholder="t('modelIdPlaceholder')">
+              <label class="form-label">{{ t('modelPresetLabel') }}</label>
+              <select class="form-select" :class="{'is-invalid': invalidModelPreset}"
+                      :value="modelPreset" :disabled="!presets.length"
+                      @change="handlePresetChange($event.target.value)">
+                <option value="" disabled>{{ presets.length ? t('modelPresetPlaceholder') : t('modelPresetEmpty') }}</option>
+                <option v-for="preset in presets" :key="preset.id" :value="preset.id">{{ preset.label }}</option>
+              </select>
+              <div class="form-text mt-2" v-if="presets.length">{{ t('modelPresetRuntimeHint') }}</div>
+              <div class="form-text mt-2" v-else>{{ t('modelPresetEmpty') }}</div>
             </div>
           </div>`,
         setup(props, {emit}) {
-            const showPass = ref(false);
-            const platforms = KNOWN_PLATFORMS;
-
-            // ProviderType Literal values
-            const providers = [
-                "default", "ollama", "bigmodel", "aliyuncs", "volces", "google", "siliconflow"
-            ];
-
-            const apiHrefMap = {
-                "https://api.302.ai/v1": ["https://share.302.ai/BgRLAe", "apiHrefInfo302ai"],
-                "https://openrouter.ai/api/v1": ["https://openrouter.ai/settings/keys", null],
-                "https://api.openai.com/v1": ["https://platform.openai.com/api-keys", null],
-                "https://api.deepseek.com/v1": ["https://platform.deepseek.com/api_keys", null],
-                "https://open.bigmodel.cn/api/paas/v4": ["https://open.bigmodel.cn/usercenter/apikeys", null],
-                "https://dashscope.aliyuncs.com/compatible-mode/v1": ["https://bailian.console.aliyun.com/?tab=model#/api-key", null],
-                "https://ark.cn-beijing.volces.com/api/v3": ["https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D", null],
-                "https://api.siliconflow.cn/v1": ["https://cloud.siliconflow.cn/account/ak", null],
-                "https://ai.juguang.chat/v1": ["https://ai.juguang.chat/console/token", null],
-                "https://www.dmxapi.cn/v1": ["https://www.dmxapi.cn/token", null],
-                "https://www.dmxapi.com/v1": ["https://www.dmxapi.com/console/token", null],
-                "https://generativelanguage.googleapis.com/v1beta/openai/": ["https://aistudio.google.com/u/0/apikey", null]
-            };
-            const apiHref = computed(() => apiHrefMap[props.baseUrl]);
-
-            const save = (key, val) => localStorage.setItem(key, val);
-            const handlePlatformChange = (val) => {
-                emit('update:platform', val);
-                save(`${props.prefix}_last_platform`, val);
-
-                // Determine provider based on platform
-                const selected = platforms.find(p => p.val === val);
-                if (val === 'custom') {
-                    emit('update:provider', 'default');
-                } else if (selected) {
-                    emit('update:provider', selected.provider);
-                }
-            };
-            const handleBaseUrlChange = (val) => {
-                emit('update:baseUrl', val);
-                emit('clearError', 'base_url');
-                if (props.platform === 'custom') save(`${props.prefix}_custom_base_url`, val);
-            };
-            const handleApiKeyChange = (val) => {
-                emit('update:apiKey', val);
-                emit('clearError', 'api_key');
-                save(`${props.prefix}_${props.platform}_apikey`, val);
-            };
-            const handleModelChange = (val) => {
-                emit('update:modelId', val);
-                emit('clearError', 'model_id');
-                save(`${props.prefix}_${props.platform}_model_id`, val);
-            };
-            const handleProviderChange = (val) => {
-                emit('update:provider', val);
-                save(`${props.prefix}_${props.platform}_provider`, val);
+            const handlePresetChange = (val) => {
+                emit('update:modelPreset', val);
+                emit('clearError', 'model_preset');
+                localStorage.setItem('translator_model_preset', val);
             };
 
             return {
-                showPass,
-                platforms,
-                providers,
-                apiHref,
-                handlePlatformChange,
-                handleBaseUrlChange,
-                handleApiKeyChange,
-                handleModelChange,
-                handleProviderChange
+                handlePresetChange
             };
         }
     };
@@ -1234,7 +1045,7 @@
     ];
 
     createApp({
-        components: {SliderControl, PlatformSelector},
+        components: {SliderControl, ModelPresetSelector},
         setup() {
             const version = ref("");
             const currentLang = ref(localStorage.getItem('ui_language') || 'zh');
@@ -1243,6 +1054,8 @@
             const tasks = ref([]);
             const enginList = ref([]);
             const defaultParams = reactive({});
+            const modelPresets = ref([]);
+            const defaultModelPreset = ref('');
 
             // Refs for DOM elements
             const glossaryInput = ref(null);
@@ -1257,9 +1070,7 @@
 
             // Validation State
             const errors = reactive({
-                model_id: false,
-                api_key: false,
-                base_url: false,
+                model_preset: false,
                 mineru_token: false,
                 mineru_deploy_base_url: false,
                 custom_to_lang: false,
@@ -1289,11 +1100,7 @@
                 formula_ocr: true,
                 code_ocr: true,
                 skip_translate: false,
-                platform: 'https://api.302.ai/v1',
-                base_url: '',
-                api_key: '',
-                model_id: '',
-                provider: 'api.openai.com', // Default provider
+                model_preset: '',
                 system_proxy_enable: false,
                 force_json: false,
                 to_lang: 'Simplified Chinese',
@@ -1336,6 +1143,10 @@
                     const v = localStorage.getItem(k);
                     return (v === null || v === '' || v === 'null') ? null : Number(v);
                 };
+                const validPresetIds = modelPresets.value.map(p => p.id);
+                const fallbackPreset = validPresetIds.includes(defaultModelPreset.value)
+                    ? defaultModelPreset.value
+                    : (validPresetIds[0] || '');
 
                 form.workflow_type = get('translator_last_workflow', 'docx');
                 form.auto_workflow_enabled = getBool('translator_auto_workflow_enabled', true);
@@ -1356,7 +1167,7 @@
                 form.formula_ocr = getBool('translator_formula_ocr', true);
                 form.code_ocr = getBool('translator_code_ocr', true);
                 form.skip_translate = getBool('translator_skip_translate', false);
-                form.platform = get('translator_platform_last_platform', 'custom');
+                form.model_preset = get('translator_model_preset', fallbackPreset);
                 form.system_proxy_enable = getBool('translator_system_proxy_enable', false);
                 form.force_json = getBool('translator_force_json', false);
                 form.to_lang = get('translator_to_lang', 'Simplified Chinese');
@@ -1370,13 +1181,8 @@
                 form.rpm = getNumOrNull('rpm'); // Load RPM
                 form.tpm = getNumOrNull('tpm'); // Load TPM
 
-                // Determine Provider
-                const platObj = KNOWN_PLATFORMS.find(p => p.val === form.platform);
-                if (form.platform === 'custom') {
-                    // 修正：读取组件实际保存的 Key (translator_platform_custom_provider)
-                    form.provider = get('translator_platform_custom_provider', 'default');
-                } else {
-                    form.provider = platObj ? platObj.provider : '';
+                if (!validPresetIds.includes(form.model_preset)) {
+                    form.model_preset = fallbackPreset;
                 }
 
                 // Restore workflow specific params
@@ -1387,9 +1193,6 @@
                 workflowParams.txt.segment_mode = get('translator_txt_segment_mode', 'line');
                 workflowParams.xlsx.translate_regions = get('translator_xlsx_translate_regions', '');
                 workflowParams.json.json_paths = get('translator_json_paths', '');
-
-                // Trigger platform updates to load API keys/models
-                updatePlatformParams(form.platform, 'translator_platform', form);
             };
 
             // --- 新增：专门用于将当前 form 数据全部写入 localStorage 的函数 ---
@@ -1419,7 +1222,7 @@
                 s('translator_formula_ocr', f.formula_ocr);
                 s('translator_code_ocr', f.code_ocr);
                 s('translator_skip_translate', f.skip_translate);
-                s('translator_platform_last_platform', f.platform);
+                s('translator_model_preset', f.model_preset);
                 s('translator_system_proxy_enable', f.system_proxy_enable);
                 s('translator_force_json', f.force_json);
                 s('translator_to_lang', f.to_lang);
@@ -1435,12 +1238,6 @@
                 s('rpm', f.rpm || '');
                 s('tpm', f.tpm || '');
 
-                // 平台相关 (API Key 等)
-                s(`translator_platform_${f.platform}_apikey`, f.api_key);
-                s(`translator_platform_${f.platform}_model_id`, f.model_id);
-                s('translator_provider', f.provider);
-                if (f.platform === 'custom') s('translator_platform_custom_base_url', f.base_url);
-
                 // 2. 自动循环保存所有具体工作流参数 (txt, docx, xlsx...)
                 for (const [wfType, params] of Object.entries(workflowParams)) {
                     for (const [key, val] of Object.entries(params)) {
@@ -1449,17 +1246,6 @@
                 }
             };
 
-            const updatePlatformParams = (plat, prefix, target) => {
-                const get = (k) => localStorage.getItem(k) || '';
-                target.api_key = get(`${prefix}_${plat}_apikey`);
-                target.model_id = get(`${prefix}_${plat}_model_id`);
-                target.base_url = plat === 'custom' ? get(`${prefix}_custom_base_url`) : plat;
-            };
-
-            watch(() => form.platform, (n) => {
-                updatePlatformParams(n, 'translator_platform', form);
-            });
-
             const t = (k) => {
                 const dict = i18nData.value[currentLang.value] || i18nData.value['zh'] || {};
                 return dict[k] || k;
@@ -1467,6 +1253,15 @@
             const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
             const saveSetting = (k, v) => localStorage.setItem(k, v);
             const saveSettingArray = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+            const syncModelPresetSelection = () => {
+                const validPresetIds = modelPresets.value.map(p => p.id);
+                const fallbackPreset = validPresetIds.includes(defaultModelPreset.value)
+                    ? defaultModelPreset.value
+                    : (validPresetIds[0] || '');
+                if (!validPresetIds.includes(form.model_preset)) {
+                    form.model_preset = fallbackPreset;
+                }
+            };
 
             const saveWorkflowParam = (keySuffix) => {
                 const wf = form.workflow_type;
@@ -1642,10 +1437,7 @@
                 // Clone basic form
                 const basePayload = {
                     skip_translate: form.skip_translate,
-                    base_url: emptyToNull(form.base_url),
-                    api_key: form.api_key || "",
-                    model_id: emptyToNull(form.model_id),
-                    provider: emptyToNull(form.provider), // Add provider
+                    model_preset: emptyToNull(form.model_preset),
                     to_lang: form.to_lang === 'custom' ? form.custom_to_lang : form.to_lang,
                     thinking: form.thinking,
                     chunk_size: Number(form.chunk_size),
@@ -1718,12 +1510,8 @@
                 Object.keys(errors).forEach(k => errors[k] = false);
 
                 if (!form.skip_translate) {
-                    if (!form.model_id) {
-                        errors.model_id = true;
-                        isValid = false;
-                    }
-                    if (form.platform === 'custom' && !form.base_url) {
-                        errors.base_url = true;
+                    if (!form.model_preset) {
+                        errors.model_preset = true;
                         isValid = false;
                     }
                     if (form.to_lang === 'custom' && !form.custom_to_lang) {
@@ -2062,6 +1850,10 @@
                             const data = JSON.parse(ev.target.result);
                             if (data.form) Object.assign(form, data.form);
                             if (data.workflowParams) Object.assign(workflowParams, data.workflowParams);
+                            ['platform', 'base_url', 'api_key', 'model_id', 'provider'].forEach((key) => {
+                                if (key in form) delete form[key];
+                            });
+                            syncModelPresetSelection();
                             saveAllSettings();
                             alert(t('configImportSuccess'));
                         } catch (err) {
@@ -2110,6 +1902,10 @@
                             projectContributeBtn: "项目协作",
                             workflowTitle: "选择工作流",
                             autoWorkflowLabel: "自动选择工作流",
+                            modelPresetLabel: "模型预设",
+                            modelPresetPlaceholder: "请选择模型预设",
+                            modelPresetEmpty: "请先在服务端环境变量中配置模型预设",
+                            modelPresetRuntimeHint: "运行时将从服务端环境变量读取供应商、模型端点与 API Key。",
                             workflowOptionPptx: "PPTX 演示文稿",
                             pptxSettingsTitleText: "PPTX 设置",
                             mineruDeployServerUrlLabel: "Server URL",
@@ -2123,6 +1919,10 @@
                             tutorialBtn: "Tutorial",
                             projectContributeBtn: "Contribute",
                             workflowTitle: "Select Workflow",
+                            modelPresetLabel: "Model Preset",
+                            modelPresetPlaceholder: "Select a model preset",
+                            modelPresetEmpty: "Configure model presets in server environment variables first",
+                            modelPresetRuntimeHint: "Provider, endpoint, and API key will be loaded from server environment variables at runtime.",
                             workflowOptionPptx: "PPTX Presentation",
                             pptxSettingsTitleText: "PPTX Settings",
                             mineruDeployServerUrlLabel: "Server URL",
@@ -2145,15 +1945,10 @@
                     enginList.value = await enginRes.json();
                     Object.assign(defaultParams, await paramsRes.json());
                     const envConfig = await configRes.json().catch(() => ({}));
-                    // 将服务端环境变量作为 localStorage 未设置时的回退默认值
-                    if (envConfig.base_url && !localStorage.getItem('translator_platform_custom_base_url')) {
-                        localStorage.setItem('translator_platform_custom_base_url', envConfig.base_url);
-                    }
-                    if (envConfig.api_key && !localStorage.getItem('translator_platform_custom_apikey')) {
-                        localStorage.setItem('translator_platform_custom_apikey', envConfig.api_key);
-                    }
-                    if (envConfig.model_id && !localStorage.getItem('translator_platform_custom_model_id')) {
-                        localStorage.setItem('translator_platform_custom_model_id', envConfig.model_id);
+                    modelPresets.value = Array.isArray(envConfig.model_presets) ? envConfig.model_presets : [];
+                    defaultModelPreset.value = envConfig.default_model_preset || (modelPresets.value[0]?.id || '');
+                    if (defaultModelPreset.value && !localStorage.getItem('translator_model_preset')) {
+                        localStorage.setItem('translator_model_preset', defaultModelPreset.value);
                     }
                     if (envConfig.rpm != null && !localStorage.getItem('rpm')) {
                         localStorage.setItem('rpm', String(envConfig.rpm));
@@ -2195,6 +1990,7 @@
 
             return {
                 version, currentLang, i18nData, glossaryData, glossaryCount, tasks, enginList, defaultParams,
+                modelPresets,
                 form, workflowParams, showMineruToken, previewMode, syncScrollEnabled, showIdentityOption,
                 errors, clearError,
                 t, createNewTask, removeTask, handleTaskFileSelect, handleTaskFileDrop, toggleTaskState,
